@@ -1,0 +1,8 @@
+*.class
+*.jar
+*.html
+*.zip
+
+lib
+
+*~
