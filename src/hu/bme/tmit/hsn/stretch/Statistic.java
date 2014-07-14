@@ -1,6 +1,6 @@
 package hu.bme.tmit.hsn.stretch;
 
-import java.util.List;
+import java.util.Collection;
 
 public class Statistic {
 
@@ -8,18 +8,18 @@ public class Statistic {
 	private final double minimum;
 	private final double maximum;
 
-	public Statistic(List<Double> statList) {
+	public Statistic(Collection<Double> statList) {
 		double sum = 0;
 		double min = Double.POSITIVE_INFINITY;
 		double max = Double.NEGATIVE_INFINITY;
-		
+
 		if (!statList.isEmpty()) {
 			for (Double d : statList) {
 				sum += d;
-				if(d < min){
+				if (d < min) {
 					min = d;
 				}
-				if(d > max){
+				if (d > max) {
 					max = d;
 				}
 			}
@@ -45,10 +45,8 @@ public class Statistic {
 
 	@Override
 	public String toString() {
-		return "Teljes statisztika: [ átlag= " + average + ", minimum= " + minimum
-				+ ", maximum= " + maximum + " ]";
+		return "Teljes statisztika: [ átlag= " + average + ", minimum= "
+				+ minimum + ", maximum= " + maximum + " ]";
 	}
-	
-	
 
 }
