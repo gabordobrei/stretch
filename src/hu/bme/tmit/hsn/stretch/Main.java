@@ -1,10 +1,11 @@
 package hu.bme.tmit.hsn.stretch;
 
-import hu.bme.tmit.hsn.stretch.interfaces.AdditiveWeigthedStretch;
+import hu.bme.tmit.hsn.stretch.interfaces.MultiplicativeWeigthedStretch;
 import hu.bme.tmit.hsn.stretch.interfaces.Stretch;
 
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Set;
 
 import org.jgrapht.VertexFactory;
@@ -17,16 +18,18 @@ import org.jgrapht.graph.ClassBasedVertexFactory;
 import org.jgrapht.graph.DefaultWeightedEdge;
 import org.jgrapht.graph.SimpleWeightedGraph;
 
+import com.google.common.collect.Lists;
+
 public class Main {
 
 	private static WeightedGraph<Object, DefaultWeightedEdge> graph;
-	private static int numberOfSimulation = 1;
-	private static int sizeRange = 0;
-	private static int sizeBase = 10;
+	private static int numberOfSimulation = 100;
+	private static int sizeRange = 10;
+	private static int sizeBase = 100;
 
 	public static void main(String[] args) {
 
-		double avgStretches = 0;
+		List<Double> avgStretches = Lists.newLinkedList();
 
 		long totalTime = System.currentTimeMillis();
 		for (int k = 0; k < numberOfSimulation; k++) {
@@ -67,7 +70,11 @@ public class Main {
 					.iterator();
 			while (dIterator.hasNext()) {
 				DefaultWeightedEdge e = dIterator.next();
-				double weight = Math.rint(Math.random() * 100);
+				double weight;
+				do {
+					weight = Math.rint(Math.random() * 100);
+				} while (weight < 0.1);
+
 				graph.setEdgeWeight(e, weight);
 			}
 
@@ -81,6 +88,7 @@ public class Main {
 
 			// Let be the root vertex is which has the minimum avg of it's
 			// edgelist's weights.
+			// *-
 			Object rootVertex = graph.vertexSet().iterator().next();
 
 			double rootVertexAvgWeight = Double.NEGATIVE_INFINITY;
@@ -102,6 +110,7 @@ public class Main {
 					rootVertex = vertex;
 				}
 			}
+			// */
 
 			// Get all the shortest path from rootVertex
 			Set<DefaultWeightedEdge> spanningTreeProtocolEdgeSet = new HashSet<DefaultWeightedEdge>();
@@ -119,42 +128,47 @@ public class Main {
 			Set<DefaultWeightedEdge> kruskalEdgeSet = kruskalMinimumSpanningTree
 					.getMinimumSpanningTreeEdgeSet();
 
-			System.out.println(graph.edgeSet());
-			System.out.println(kruskalEdgeSet);
-			System.err.println(spanningTreeProtocolEdgeSet);
+			/*-
+			for (DefaultWeightedEdge e : graph.edgeSet()) {
+				System.err.println(graph.getEdgeSource(e) + " : "
+						+ graph.getEdgeTarget(e) + " => "
+						+ graph.getEdgeWeight(e));
+			}
+			// */
+
+			// System.out.println(graph.edgeSet());
+			// System.out.println("kruskal: " + kruskalEdgeSet);
+			// System.err.println("spt: " + spanningTreeProtocolEdgeSet);
 
 			// Pass the default graph, the SpanningTreeProtocol's edgeset (as
 			// defaultEdgeSet) and the Kruskal's algo's edgeset (as
 			// alternativeEdgeSet) to see the stretch.
-			Stretch<Object, DefaultWeightedEdge> stretch = new AdditiveWeigthedStretch<Object, DefaultWeightedEdge>(
-					graph, spanningTreeProtocolEdgeSet, kruskalEdgeSet);
 
-			System.err.println(stretch.getAverageStretch());
-			avgStretches += stretch.getAverageStretch();
+			Stretch<Object, DefaultWeightedEdge> stretch = new MultiplicativeWeigthedStretch<Object, DefaultWeightedEdge>(
+					graph, graph.edgeSet(), 
+					//*
+					kruskalEdgeSet
+					/*/
+					spanningTreeProtocolEdgeSet
+					//*/
+					);
 
-			/*- Print out the graph to be sure it's really complete
-			Iterator<Object> iter = new DepthFirstIterator<Object, DefaultWeightedEdge>(graph);
-			Object vertex;
-			while (iter.hasNext()) {
-				vertex = iter.next();
+			Statistic stat = stretch.getStatistics();
 
-				System.out.println("Vertex " + vertex.toString() + " is connected to: ");
-				for (DefaultWeightedEdge e : graph.edgesOf(vertex)) {
+			avgStretches.add(stat.getAverage());
 
-					System.out.print(e.toString() + " - " + graph.getEdgeWeight(e));
-
-				}
-				System.out.println();
-			}
-			// */
+			// System.err.println("min: " + stat.getMinimum());
+			System.err.println("avg: " + stat.getAverage());
+			// System.err.println("max: " + stat.getMaximum());
 
 			System.out.println((System.currentTimeMillis() - now) + " ms...");
 		}
 
 		System.err.println("-------------");
 
+		Statistic stat = new Statistic(avgStretches);
 		if (numberOfSimulation != 1) {
-			System.out.println(avgStretches / (double) numberOfSimulation);
+			System.err.println(stat);
 		}
 
 		System.err.println("Összesen "

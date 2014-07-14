@@ -1,5 +1,8 @@
 package hu.bme.tmit.hsn.stretch.interfaces;
 
+import hu.bme.tmit.hsn.stretch.Statistic;
+
+import java.util.List;
 import java.util.Set;
 
 import org.jgrapht.WeightedGraph;
@@ -8,6 +11,7 @@ import org.jgrapht.graph.DefaultWeightedEdge;
 import org.jgrapht.graph.SimpleWeightedGraph;
 
 import com.google.common.collect.HashBasedTable;
+import com.google.common.collect.Lists;
 import com.google.common.collect.Table;
 
 /**
@@ -19,14 +23,14 @@ import com.google.common.collect.Table;
  * @param <E>
  */
 
-public class AdditiveWeigthedStretch<V, E> implements Stretch<V, E> {
+public class MultiplicativeWeigthedStretch<V, E> implements Stretch<V, E> {
 
 	private WeightedGraph<Object, DefaultWeightedEdge> defaultGraph,
 			edgeSetGraph;
 	private Table<V, V, Double> stretches;
-	private double averageStretch;
+	private final Statistic stat;
 
-	public AdditiveWeigthedStretch(WeightedGraph<V, E> vertexSetGraph,
+	public MultiplicativeWeigthedStretch(WeightedGraph<V, E> vertexSetGraph,
 			Set<E> defaultEdgeSet, Set<E> alternativeEdgeSet) {
 
 		this.defaultGraph = new SimpleWeightedGraph<Object, DefaultWeightedEdge>(
@@ -67,47 +71,52 @@ public class AdditiveWeigthedStretch<V, E> implements Stretch<V, E> {
 		DijkstraShortestPath<Object, DefaultWeightedEdge> defaultDijkstraShortestPath;
 		DijkstraShortestPath<Object, DefaultWeightedEdge> alternativeEdgeSetDijkstraShortestPath;
 
+		List<Double> statList = Lists.newLinkedList();
 		stretches = HashBasedTable.create();
 		for (V sourceVertex : vertexSetGraph.vertexSet()) {
 			for (V targetVertex : vertexSetGraph.vertexSet()) {
 
-				// Ha egyik irányban már megvan, akkor nem csináljuk meg
-				// megint...
-				if (!stretches.contains(targetVertex, sourceVertex)) {
+				if (!sourceVertex.equals(targetVertex)) {
+					// Ha egyik irányban már megvan, akkor nem csináljuk meg
+					// megint...
+					if (!stretches.contains(targetVertex, sourceVertex)) {
 
-					defaultDijkstraShortestPath = new DijkstraShortestPath<Object, DefaultWeightedEdge>(
-							defaultGraph, sourceVertex, targetVertex);
+						defaultDijkstraShortestPath = new DijkstraShortestPath<Object, DefaultWeightedEdge>(
+								defaultGraph, sourceVertex, targetVertex);
 
-					alternativeEdgeSetDijkstraShortestPath = new DijkstraShortestPath<Object, DefaultWeightedEdge>(
-							edgeSetGraph, sourceVertex, targetVertex);
+						alternativeEdgeSetDijkstraShortestPath = new DijkstraShortestPath<Object, DefaultWeightedEdge>(
+								edgeSetGraph, sourceVertex, targetVertex);
 
-					double defaultPathLength = defaultDijkstraShortestPath
-							.getPathLength();
-					double alternativePathLength = alternativeEdgeSetDijkstraShortestPath
-							.getPathLength();
+						double defaultPathLength = defaultDijkstraShortestPath
+								.getPathLength();
+						double alternativePathLength = alternativeEdgeSetDijkstraShortestPath
+								.getPathLength();
+						// System.err
+						// .println(sourceVertex
+						// + " -> "
+						// + targetVertex
+						// + ": "
+						// + defaultDijkstraShortestPath
+						// .getPathEdgeList());
+						// System.err.println(defaultPathLength);
+						// System.out.println(alternativePathLength);
+						// System.out.println(sourceVertex + " -> " +
+						// targetVertex
+						// + ": " + alternativePathLength
+						// / defaultPathLength);
 
-//					System.err.println(defaultPathLength);
-//					System.out.println(alternativePathLength);
-//					System.out.println(alternativePathLength / defaultPathLength);
-					
-					stretches.put(sourceVertex, targetVertex,
-							(alternativePathLength / defaultPathLength));
-				} else {
-					double d = stretches.get(targetVertex, sourceVertex);
-					stretches.put(sourceVertex, targetVertex, d);
+						stretches.put(sourceVertex, targetVertex,
+								(alternativePathLength / defaultPathLength));
+						statList.add(alternativePathLength / defaultPathLength);
+					} else {
+						double d = stretches.get(targetVertex, sourceVertex);
+						stretches.put(sourceVertex, targetVertex, d);
+					}
 				}
 			}
 		}
 
-		for (final V startVertex : stretches.columnKeySet()) {
-			for (V targetVertex : stretches.column(startVertex).keySet()) {
-				averageStretch += stretches.get(startVertex, targetVertex);
-			}
-		}
-
-		double numberOfVertexPairs = (double) (vertexSetGraph.vertexSet()
-				.size() * (vertexSetGraph.vertexSet().size() - 1) / 2.0);
-		averageStretch /= numberOfVertexPairs;
+		stat = new Statistic(statList);
 
 	}
 
@@ -117,13 +126,13 @@ public class AdditiveWeigthedStretch<V, E> implements Stretch<V, E> {
 	}
 
 	@Override
-	public double getAverageStretch() {
-		return averageStretch;
+	public double getStretchBetween(V fromVertex, V toVertex) {
+		return stretches.get(fromVertex, toVertex);
 	}
 
 	@Override
-	public double getStretchBetween(V fromVertex, V toVertex) {
-		return stretches.get(fromVertex, toVertex);
+	public Statistic getStatistics() {
+		return stat;
 	}
 
 }
