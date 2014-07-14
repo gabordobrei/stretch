@@ -8,6 +8,7 @@ import hu.bme.tmit.hsn.stretch.interfaces.Stretch;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Random;
 import java.util.Set;
 
 import org.jgrapht.VertexFactory;
@@ -33,13 +34,26 @@ public class DefaultSimulation implements Simulation {
 	private VertexFactory<Object> vFactory;
 
 	public DefaultSimulation() {
-		initGraph();
+		initGraph(false);
 	}
 
-	protected void initGraph() {
+	protected void initGraph(boolean usePowerLawDistribution) {
 
-		int size = sizeBase
-				+ (int) Math.round(Math.random() * 2 * sizeRange - sizeRange);
+		Random sizeGenerator = new Random();
+		AbstractEdgeWeigthRandomGenerator edgeWeigthDistributionGenerator;
+		if(usePowerLawDistribution){
+			edgeWeigthDistributionGenerator = new PowerLawDistributionRandomGenerator();
+		} else {
+			edgeWeigthDistributionGenerator = new UniformDistributionRandomGenerator();
+		}
+		
+		int size;
+		if (sizeRange == 0) {
+			size = sizeBase;
+		} else {
+			size = sizeBase + sizeGenerator.nextInt(2 * sizeRange)
+					- sizeRange;
+		}
 
 		// Create the graph object; it is null at this point
 		graph = new SimpleWeightedGraph<Object, DefaultWeightedEdge>(
@@ -71,7 +85,7 @@ public class DefaultSimulation implements Simulation {
 			DefaultWeightedEdge e = dIterator.next();
 			double weight;
 			do {
-				weight = Math.rint(Math.random() * 100);
+				weight = edgeWeigthDistributionGenerator.nextEdgeWeight() * 100;
 			} while (weight < 0.1);
 
 			graph.setEdgeWeight(e, weight);
@@ -114,7 +128,7 @@ public class DefaultSimulation implements Simulation {
 		long totalTime = System.currentTimeMillis();
 		for (int k = 0; k < numberOfSimulation; k++) {
 
-			initGraph();
+			initGraph(false);
 
 			long now = System.currentTimeMillis();
 

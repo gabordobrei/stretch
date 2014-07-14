@@ -6,7 +6,7 @@ import hu.bme.tmit.hsn.stretch.simulation.StretchDistribution;
 public class Main {
 
 	public static void main(String[] args) {
-		Simulation sim = new StretchDistribution(100, true);
+		Simulation sim = new StretchDistribution(10, true, true);
 		sim.simulate();
 
 		/*-

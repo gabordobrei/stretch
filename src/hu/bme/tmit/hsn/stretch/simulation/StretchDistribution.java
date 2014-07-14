@@ -15,12 +15,13 @@ public class StretchDistribution extends DefaultSimulation {
 
 	Map<Integer, Double> stretchDistribution;
 
-	public StretchDistribution(int initBase, boolean useRandomGraph) {
+	public StretchDistribution(int initBase, boolean useRandomGraph,
+			boolean usePowerLawDistribution) {
 		stretchDistribution = new TreeMap<Integer, Double>();
 		sizeRange = 0;
 		sizeBase = initBase;
 		if (useRandomGraph) {
-			initGraph();
+			initGraph(usePowerLawDistribution);
 		} else {
 			readGraph();
 		}
