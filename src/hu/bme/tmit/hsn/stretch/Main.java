@@ -6,8 +6,10 @@ import hu.bme.tmit.hsn.stretch.simulation.StretchDistribution;
 public class Main {
 
 	public static void main(String[] args) {
-		Simulation sim = new StretchDistribution(10, true, true);
-		sim.simulate();
+		// Simulation sim = new StretchDistribution(10, true);
+		// Simulation sim = new StretchDistribution("d29", "d32", "graph/Abvt.graphml");
+		Simulation sim = new StretchDistribution("d11", "d8", "graph/condensed.graphml");
+		//sim.simulate();
 
 		/*-
 		Map<Integer, Double> dist = ((StretchDistribution) sim)

@@ -13,5 +13,6 @@
 			<attribute name="javadoc_location" value="file:/mnt/15D644F55399BC41/projects/stretch/lib/jgrapht-0.9.0/javadoc/"/>
 		</attributes>
 	</classpathentry>
+	<classpathentry kind="lib" path="lib/blueprints-core-0.9.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

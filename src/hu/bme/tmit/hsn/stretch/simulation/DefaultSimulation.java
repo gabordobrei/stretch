@@ -34,7 +34,7 @@ public class DefaultSimulation implements Simulation {
 	private VertexFactory<Object> vFactory;
 
 	public DefaultSimulation() {
-		initGraph(false);
+		//initGraph(false);
 	}
 
 	protected void initGraph(boolean usePowerLawDistribution) {
