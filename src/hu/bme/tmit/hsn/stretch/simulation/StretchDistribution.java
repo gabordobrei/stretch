@@ -2,13 +2,16 @@ package hu.bme.tmit.hsn.stretch.simulation;
 
 import hu.bme.tmit.hsn.stretch.interfaces.MultiplicativeWeigthedStretch;
 import hu.bme.tmit.hsn.stretch.interfaces.Stretch;
+import hu.bme.tmit.hsn.stretch.io.GraphJSONExporter;
 
 import java.io.BufferedInputStream;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.io.InputStream;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
@@ -19,18 +22,38 @@ import org.jgrapht.alg.DijkstraShortestPath;
 import org.jgrapht.graph.DefaultWeightedEdge;
 import org.jgrapht.graph.SimpleWeightedGraph;
 
+import com.google.common.collect.Lists;
+
 public class StretchDistribution extends DefaultSimulation {
 
 	Map<Integer, Double> stretchDistribution;
 
+	GraphJSONExporter exporter;
+
 	public StretchDistribution(String latId, String lonId, String fileName) {
 		stretchDistribution = new TreeMap<Integer, Double>();
+
+		exporter = GraphJSONExporter.getInstance();
 
 		try {
 			readGraph(latId, lonId, fileName);
 		} catch (XMLStreamException | FileNotFoundException e) {
 			e.printStackTrace();
 		}
+
+		try {
+			exporter.export(graph, "graph/generated.condensed.json");
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+
+		for (DefaultWeightedEdge e : graph.edgeSet()) {
+			System.err
+					.println(graph.getEdgeSource(e) + " -- "
+							+ graph.getEdgeWeight(e) + " --> "
+							+ graph.getEdgeTarget(e));
+		}
+
 	}
 
 	public StretchDistribution(int initBase, boolean usePowerLawDistribution) {
@@ -153,12 +176,6 @@ public class StretchDistribution extends DefaultSimulation {
 					Double lon2 = Double.parseDouble((String) vOut
 							.getProperty(LongitudeKey));
 
-					//*-
-					System.err.println("----");
-					System.out.println("(" + lat1 + ", " + lon1 + ")");
-					System.out.println("(" + lat2 + ", " + lon2 + ")");
-					 //*/
-
 					Double latDistance = (lat2 - lat1) * Math.PI / 180;
 					Double lonDistance = (lon2 - lon1) * Math.PI / 180;
 					Double a = Math.sin(latDistance / 2)
@@ -192,5 +209,22 @@ public class StretchDistribution extends DefaultSimulation {
 				graph.removeVertex(Integer.parseInt((String) vIn.getId()));
 			}
 		}
+
+		List<DefaultWeightedEdge> removeableEdge = Lists.newLinkedList();
+		for (DefaultWeightedEdge e : graph.edgeSet()) {
+			if (graph.getEdgeWeight(e) < 1) {
+				removeableEdge.add(e);
+			}
+		}
+		graph.removeAllEdges(removeableEdge);
+
+		List<Object> removeableVertex = Lists.newLinkedList();
+		for (Object v : graph.vertexSet()) {
+			if (graph.degreeOf(v) == 0) {
+				removeableVertex.add(v);
+			}
+		}
+		graph.removeAllVertices(removeableVertex);
+
 	}
 }

@@ -12,7 +12,6 @@ import java.util.Random;
 import java.util.Set;
 
 import org.jgrapht.VertexFactory;
-import org.jgrapht.WeightedGraph;
 import org.jgrapht.alg.DijkstraShortestPath;
 import org.jgrapht.alg.KruskalMinimumSpanningTree;
 import org.jgrapht.alg.interfaces.MinimumSpanningTree;
@@ -25,7 +24,7 @@ import com.google.common.collect.Lists;
 
 public class DefaultSimulation implements Simulation {
 
-	protected WeightedGraph<Object, DefaultWeightedEdge> graph;
+	protected SimpleWeightedGraph<Object, DefaultWeightedEdge> graph;
 	protected int numberOfSimulation = 100;
 	protected int sizeRange = 10;
 	protected int sizeBase = 100;
@@ -34,25 +33,24 @@ public class DefaultSimulation implements Simulation {
 	private VertexFactory<Object> vFactory;
 
 	public DefaultSimulation() {
-		//initGraph(false);
+		// initGraph(false);
 	}
 
 	protected void initGraph(boolean usePowerLawDistribution) {
 
 		Random sizeGenerator = new Random();
 		AbstractEdgeWeigthRandomGenerator edgeWeigthDistributionGenerator;
-		if(usePowerLawDistribution){
+		if (usePowerLawDistribution) {
 			edgeWeigthDistributionGenerator = new PowerLawDistributionRandomGenerator();
 		} else {
 			edgeWeigthDistributionGenerator = new UniformDistributionRandomGenerator();
 		}
-		
+
 		int size;
 		if (sizeRange == 0) {
 			size = sizeBase;
 		} else {
-			size = sizeBase + sizeGenerator.nextInt(2 * sizeRange)
-					- sizeRange;
+			size = sizeBase + sizeGenerator.nextInt(2 * sizeRange) - sizeRange;
 		}
 
 		// Create the graph object; it is null at this point
