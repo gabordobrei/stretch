@@ -1,4 +1,4 @@
-package hu.bme.tmit.hsn.stretch;
+package hu.bme.tmit.hsn.stretch.stat;
 
 import java.util.Collection;
 

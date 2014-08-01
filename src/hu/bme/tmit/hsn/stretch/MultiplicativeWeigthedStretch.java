@@ -1,18 +1,16 @@
-package hu.bme.tmit.hsn.stretch.interfaces;
+package hu.bme.tmit.hsn.stretch;
 
-import hu.bme.tmit.hsn.stretch.Statistic;
+import hu.bme.tmit.hsn.stretch.stat.Statistic;
 
 import java.util.List;
 import java.util.Set;
 
 import org.jgrapht.WeightedGraph;
 import org.jgrapht.alg.DijkstraShortestPath;
-import org.jgrapht.graph.DefaultWeightedEdge;
 import org.jgrapht.graph.SimpleWeightedGraph;
 
 import com.google.common.collect.HashBasedTable;
 import com.google.common.collect.Lists;
-import com.google.common.collect.Table;
 
 /**
  * 
@@ -23,24 +21,21 @@ import com.google.common.collect.Table;
  * @param <E>
  */
 
-public class MultiplicativeWeigthedStretch<V, E> implements Stretch<V, E> {
-
-	private WeightedGraph<Object, DefaultWeightedEdge> defaultGraph,
-			edgeSetGraph;
-	private Table<V, V, Double> stretches;
-	private final Statistic stat;
+public class MultiplicativeWeigthedStretch<V, E> extends Stretch<V, E> {
 
 	public MultiplicativeWeigthedStretch(WeightedGraph<V, E> vertexSetGraph,
-			Set<E> defaultEdgeSet, Set<E> alternativeEdgeSet) {
+			Set<E> defaultEdgeSet, Set<E> alternativeEdgeSet, Class<? extends E> edgeClass) {
 
-		this.defaultGraph = new SimpleWeightedGraph<Object, DefaultWeightedEdge>(
-				DefaultWeightedEdge.class);
-		this.edgeSetGraph = new SimpleWeightedGraph<Object, DefaultWeightedEdge>(
-				DefaultWeightedEdge.class);
+		this.edgeClass = edgeClass;
+
+		this.defaultGraph = (WeightedGraph<V, E>) new SimpleWeightedGraph<V, E>(
+				edgeClass);
+		this.alternativeGraph = (WeightedGraph<V, E>) new SimpleWeightedGraph<V, E>(
+				edgeClass);
 
 		for (V v : vertexSetGraph.vertexSet()) {
 			defaultGraph.addVertex(v);
-			edgeSetGraph.addVertex(v);
+			alternativeGraph.addVertex(v);
 		}
 
 		// 1. Minimum Spanning Tree Graph
@@ -53,23 +48,23 @@ public class MultiplicativeWeigthedStretch<V, E> implements Stretch<V, E> {
 		for (E e : minimumSpanningTreeEdgeList) {
 			minimumSpanningTreeGraph.addEdge(g.getEdgeSource(e), g.getEdgeTarget(e), e);
 		}
-		// */
+		//*/
 
 		// 1. Default Graph
 		for (E e : defaultEdgeSet) {
 			defaultGraph.addEdge(vertexSetGraph.getEdgeSource(e),
-					vertexSetGraph.getEdgeTarget(e), (DefaultWeightedEdge) e);
+					vertexSetGraph.getEdgeTarget(e), (E) e);
 		}
 
-		// 2. Edge Set Graph
+		// 2. Alternative Graph
 		for (E e : alternativeEdgeSet) {
-			edgeSetGraph.addEdge(vertexSetGraph.getEdgeSource(e),
-					vertexSetGraph.getEdgeTarget(e), (DefaultWeightedEdge) e);
+			alternativeGraph.addEdge(vertexSetGraph.getEdgeSource(e),
+					vertexSetGraph.getEdgeTarget(e), (E) e);
 		}
 
 		// 3. create stretches
-		DijkstraShortestPath<Object, DefaultWeightedEdge> defaultDijkstraShortestPath;
-		DijkstraShortestPath<Object, DefaultWeightedEdge> alternativeEdgeSetDijkstraShortestPath;
+		DijkstraShortestPath<V, E> defaultDijkstraShortestPath;
+		DijkstraShortestPath<V, E> alternativeDijkstraShortestPath;
 
 		List<Double> statList = Lists.newLinkedList();
 		stretches = HashBasedTable.create();
@@ -81,15 +76,15 @@ public class MultiplicativeWeigthedStretch<V, E> implements Stretch<V, E> {
 					// megint...
 					if (!stretches.contains(targetVertex, sourceVertex)) {
 
-						defaultDijkstraShortestPath = new DijkstraShortestPath<Object, DefaultWeightedEdge>(
+						defaultDijkstraShortestPath = new DijkstraShortestPath<V, E>(
 								defaultGraph, sourceVertex, targetVertex);
 
-						alternativeEdgeSetDijkstraShortestPath = new DijkstraShortestPath<Object, DefaultWeightedEdge>(
-								edgeSetGraph, sourceVertex, targetVertex);
+						alternativeDijkstraShortestPath = new DijkstraShortestPath<V, E>(
+								alternativeGraph, sourceVertex, targetVertex);
 
 						double defaultPathLength = defaultDijkstraShortestPath
 								.getPathLength();
-						double alternativePathLength = alternativeEdgeSetDijkstraShortestPath
+						double alternativePathLength = alternativeDijkstraShortestPath
 								.getPathLength();
 						// System.err
 						// .println(sourceVertex
@@ -98,11 +93,12 @@ public class MultiplicativeWeigthedStretch<V, E> implements Stretch<V, E> {
 						// + ": "
 						// + defaultDijkstraShortestPath
 						// .getPathEdgeList());
-						// System.err.println(defaultPathLength);
-						// System.out.println(alternativePathLength);
-						// System.out.println(sourceVertex + " -> " +
-						// targetVertex
-						// + ": " + alternativePathLength
+						// System.err.println("defaultPathLength: "
+						// + defaultPathLength);
+						// System.out.println("alternativePathLength: "
+						// + alternativePathLength);
+						// System.out.println("arány: " + sourceVertex + " -> "
+						// + targetVertex + ": " + alternativePathLength
 						// / defaultPathLength);
 
 						stretches.put(sourceVertex, targetVertex,
@@ -117,22 +113,5 @@ public class MultiplicativeWeigthedStretch<V, E> implements Stretch<V, E> {
 		}
 
 		stat = new Statistic(statList);
-
 	}
-
-	@Override
-	public Table<V, V, Double> getStretches() {
-		return stretches;
-	}
-
-	@Override
-	public double getStretchBetween(V fromVertex, V toVertex) {
-		return stretches.get(fromVertex, toVertex);
-	}
-
-	@Override
-	public Statistic getStatistics() {
-		return stat;
-	}
-
 }

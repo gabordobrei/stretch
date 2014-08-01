@@ -1,13 +1,11 @@
-package hu.bme.tmit.hsn.stretch.simulation;
+package hu.bme.tmit.hsn.stretch.sim;
 
-import hu.bme.tmit.hsn.stretch.interfaces.MultiplicativeWeigthedStretch;
-import hu.bme.tmit.hsn.stretch.interfaces.Stretch;
-import hu.bme.tmit.hsn.stretch.io.GraphJSONExporter;
+import hu.bme.tmit.hsn.stretch.MultiplicativeWeigthedStretch;
+import hu.bme.tmit.hsn.stretch.Stretch;
 
 import java.io.BufferedInputStream;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
-import java.io.IOException;
 import java.io.InputStream;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -18,22 +16,24 @@ import java.util.TreeMap;
 
 import javax.xml.stream.XMLStreamException;
 
+import org.jgrapht.WeightedGraph;
 import org.jgrapht.alg.DijkstraShortestPath;
+import org.jgrapht.graph.AbstractBaseGraph;
 import org.jgrapht.graph.DefaultWeightedEdge;
 import org.jgrapht.graph.SimpleWeightedGraph;
 
 import com.google.common.collect.Lists;
 
-public class StretchDistribution extends DefaultSimulation {
+public class StretchDistributionSimulation extends
+		Simulation<Object, DefaultWeightedEdge> {
 
 	Map<Integer, Double> stretchDistribution;
 
-	GraphJSONExporter exporter;
-
-	public StretchDistribution(String latId, String lonId, String fileName) {
+	public StretchDistributionSimulation(String latId, String lonId,
+			String fileName) {
 		stretchDistribution = new TreeMap<Integer, Double>();
-
-		exporter = GraphJSONExporter.getInstance();
+		this.vertexClass = Object.class;
+		this.edgeClass = DefaultWeightedEdge.class;
 
 		try {
 			readGraph(latId, lonId, fileName);
@@ -41,36 +41,38 @@ public class StretchDistribution extends DefaultSimulation {
 			e.printStackTrace();
 		}
 
+		/*-
 		try {
-			exporter.export(graph, "graph/generated.condensed.json");
+			(GraphJSONExporter.getInstance()).export(graph,
+					"graph/generated.condensed.json");
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
-
-		for (DefaultWeightedEdge e : graph.edgeSet()) {
-			System.err
-					.println(graph.getEdgeSource(e) + " -- "
-							+ graph.getEdgeWeight(e) + " --> "
-							+ graph.getEdgeTarget(e));
-		}
+		//*/
 
 	}
 
-	public StretchDistribution(int initBase, boolean usePowerLawDistribution) {
+	public StretchDistributionSimulation(int initBase,
+			boolean usePowerLawDistribution) {
+		
 		stretchDistribution = new TreeMap<Integer, Double>();
 		sizeRange = 0;
 		sizeBase = initBase;
-		initGraph(usePowerLawDistribution);
+		this.vertexClass = Object.class;
+		this.edgeClass = DefaultWeightedEdge.class;
+		initRandomGraph(usePowerLawDistribution);
 	}
 
+	@Override
 	public void simulate() {
+		
 		/**
 		 * véletlen egyenletes (n = 1000) gráfon minden csomópontra root: mennyi
 		 * a stretch. eloszlás vitzsgálata: x: stretch, y: hány féle rootból
 		 * lett ennyi a stretch.
 		 */
 
-		long prev = System.currentTimeMillis();
+		// long prev = System.currentTimeMillis();
 		Set<DefaultWeightedEdge> spanningTreeProtocolEdgeSet = new HashSet<DefaultWeightedEdge>();
 		DijkstraShortestPath<Object, DefaultWeightedEdge> dsp;
 		Stretch<Object, DefaultWeightedEdge> stretch;
@@ -96,7 +98,9 @@ public class StretchDistribution extends DefaultSimulation {
 			 * különbségét.
 			 */
 			stretch = new MultiplicativeWeigthedStretch<Object, DefaultWeightedEdge>(
-					graph, graph.edgeSet(), spanningTreeProtocolEdgeSet);
+					(WeightedGraph<Object, DefaultWeightedEdge>) graph,
+					graph.edgeSet(), spanningTreeProtocolEdgeSet,
+					DefaultWeightedEdge.class);
 
 			stat = stretch.getStatistics();
 
@@ -105,17 +109,17 @@ public class StretchDistribution extends DefaultSimulation {
 
 			/*************************************/
 
-			long curr = System.currentTimeMillis();
 			/*-
+			long curr = System.currentTimeMillis();
 			System.err.println("If the rootVertex is #"
 					+ ((Integer) rootVertex + 1) + ", then the stretch is "
 					+ stat.getAverage() + ". (calculated in " + (curr - prev)
 					+ " ms.)");
-			/*/
-			System.err.println("#" + ((Integer) rootVertex + 1) + " ==> "
-					+ stat.getAverage());
-			// */
 			prev = curr;
+			//*/
+
+			System.err.println(stat.getAverage());
+
 		}
 	}
 
@@ -123,6 +127,7 @@ public class StretchDistribution extends DefaultSimulation {
 		return stretchDistribution;
 	}
 
+	@SuppressWarnings("unchecked")
 	private void readGraph(String latId, String lonId, String fileName)
 			throws XMLStreamException, FileNotFoundException {
 		final String LatitudeKey = latId;
@@ -197,7 +202,9 @@ public class StretchDistribution extends DefaultSimulation {
 					Integer v1 = Integer.parseInt((String) vIn.getId());
 					Integer v2 = Integer.parseInt((String) vOut.getId());
 					graph.addEdge(v1, v2);
-					graph.setEdgeWeight(graph.getEdge(v1, v2), distance * width);
+					((WeightedGraph<Object, DefaultWeightedEdge>) graph)
+							.setEdgeWeight(graph.getEdge(v1, v2), distance
+									* width);
 					// System.err.println(v1 + " --"
 					// + graph.getEdgeWeight(graph.getEdge(v2, v1))
 					// + "--> " + v2);
@@ -220,7 +227,7 @@ public class StretchDistribution extends DefaultSimulation {
 
 		List<Object> removeableVertex = Lists.newLinkedList();
 		for (Object v : graph.vertexSet()) {
-			if (graph.degreeOf(v) == 0) {
+			if (((AbstractBaseGraph<Object, DefaultWeightedEdge>) graph).degreeOf(v) == 0) {
 				removeableVertex.add(v);
 			}
 		}

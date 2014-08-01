@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.IOException;
 
 import org.jgrapht.Graph;
+import org.jgrapht.graph.DefaultWeightedEdge;
 
 import com.google.common.base.Charsets;
 import com.google.common.io.Files;
@@ -19,7 +20,8 @@ public class GraphJSONExporter {
 	private static GraphJSONExporter instance = null;
 
 	private GraphJSONExporter() {
-		gson = isPretty ? new GsonBuilder().setPrettyPrinting().create() : new Gson();
+		gson = isPretty ? new GsonBuilder().setPrettyPrinting().create()
+				: new Gson();
 	}
 
 	public static GraphJSONExporter getInstance() {
@@ -29,7 +31,8 @@ public class GraphJSONExporter {
 		return instance;
 	}
 
-	public void export(Graph graph, String fileName) throws IOException {
+	public void export(Graph<Object, DefaultWeightedEdge> graph, String fileName)
+			throws IOException {
 		Files.write(gson.toJson(graph), new File(fileName), Charsets.UTF_8);
 	}
 
